@@ -1,0 +1,9 @@
+django
+django-allauth
+gunicorn
+whitenoise
+pymongo
+xxhash
+requests
+PyJWT
+setuptools
