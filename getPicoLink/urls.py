@@ -14,9 +14,27 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path, include
+from django.shortcuts import redirect
+from django.views.generic import RedirectView
+from api import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('home.urls')),
+
+    # just botchung together the endpoints
+    # [TODO] handle URIs more elegently
+    path('load/', views.user_urls),
+    path('custompico/', views.custom_url),
+    path('delete/<str:custom_phrase>/', views.delete_url),
+    path('update/<str:custom_phrase>/', views.update_url),
+    re_path(r'^(?P<url_hash>[A-Za-z0-9_-]+)/$', include('api.urls')),   #[+]/[*{0}]
+    path('get/', include('api.urls')),  #get/[+]
+    path('accounts/', include('allauth.urls')),
+    path('auth/', include('users.urls')),
+    path('accounts/login/', RedirectView.as_view(url='/accounts/google/login/')),
+    path('accounts/signup/', RedirectView.as_view(url='/accounts/google/login/')),
 ]
