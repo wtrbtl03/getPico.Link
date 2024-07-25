@@ -42,7 +42,6 @@ def user_urls(request):
         urls = list(COLLECTION.find({'email': user_email}, {'_id': 0, 'map_of': 1, 'map_to': 1}))
     except:
         urls = []                                                                                       # return empty list if no custom urls for the user
-    print(COLLECTION, CONNECTION_ERROR)
     return JsonResponse(urls, safe=False)
 
 
@@ -58,7 +57,7 @@ def shorten(request):
     print(long_url)
     hash = get_hash(long_url)
 
-    shortened_url = DOMAIN_NAME+'/'+hash
+    shortened_url = f"https://{DOMAIN_NAME}/{hash}"
 
     new_document = {'map_of': long_url,
                     'map_to': hash}
@@ -85,12 +84,12 @@ def custom_url(request):
 
     is_valid = validate_custom_phrase(hash)
     if (not is_valid):
-        return JsonResponse({'error': 'Invalid characters, use Base64'})
+        return JsonResponse({'error': 'Invalid characters, use Base64'}, status='400')
     new_document = {'map_of': long_url,
                     'map_to': hash,
                     'email': user_email}
     COLLECTION.insert_one(new_document)
-    shortened_url = DOMAIN_NAME + '/' + hash
+    shortened_url = f"https://{DOMAIN_NAME}/{hash}"
     response = {'shortened_url': shortened_url}
     return JsonResponse(response)
 
@@ -107,9 +106,10 @@ def update_url(request, custom_phrase):
             data = json.loads(request.body)
             new_map_to = data.get('map_to')
             new_map_of = data.get('map_of')
-            is_valid = validate_custom_phrase(new_map_to)
-            if (not is_valid):
-                return JsonResponse({'error': 'Invalid characters, use Base64'})
+            if (new_map_to != custom_phrase):
+                is_valid = validate_custom_phrase(new_map_to)
+                if (not is_valid):
+                    return JsonResponse({'error': 'Invalid characters, use Base64'})
             result = COLLECTION.update_one(
                 {"map_to": custom_phrase, "email": request.user.email},
                 {"$set": {"map_to": new_map_to, "map_of": new_map_of}}

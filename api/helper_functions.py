@@ -6,15 +6,20 @@ CHARSET_BASE62 = "abcedfghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 
 CHARSET_BASE64 = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 
-MAX_CUSTOM_PHRASE_LEN = 25
+CUSTOM_PHRASE_MIN_LEN = 4
+CUSTOM_PHRASE_MAX_LEN = 25
+
+def validate_long_url(long_url):
+    pass
 
 def validate_custom_phrase(custom_phrase):
-    if len(custom_phrase) > 25:
+    custom_phrase_len = len(custom_phrase)
+    if custom_phrase_len < CUSTOM_PHRASE_MIN_LEN or custom_phrase_len > CUSTOM_PHRASE_MAX_LEN:  # checking if custom phrase is within length bounds
         return False
-    if(not all(char in CHARSET_BASE64 for char in custom_phrase)):  # cheching if custom phrase is Base64 or not
+    if(not all(char in CHARSET_BASE64 for char in custom_phrase)):                              # cheching if custom phrase is Base64 or not
         return False
     try:
-        inDB = COLLECTION.find_one({"map_to":  custom_phrase})      # checking if same custom phrase exists in database
+        inDB = COLLECTION.find_one({"map_to":  custom_phrase})                                  # checking if same custom phrase exists in database
         print(inDB['map_of'])
         return False
     except:
@@ -26,7 +31,7 @@ def get_hash(long_url):
     int_hash = xxhash.xxh3_64(salted_url).intdigest()
     
     segments = []
-    for i in range(5):
+    for _ in range(5):
         segments.append(int_hash % 10000)
         int_hash //= 10000
 

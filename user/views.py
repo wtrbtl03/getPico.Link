@@ -3,12 +3,12 @@ from django.http import HttpResponse
 
 @login_required
 def test(request):
-    return HttpResponse('User: '+request.user.email)
+    response = f"""
+    User: {request.user}
+    User username: {request.user.username}
+    User email: {request.user.email}
+    User First Name: {request.user.first_name}
 
-@login_required
-def custom(request):
-    long_url = ''
-    custom_phrase = ''
-    email = request.user.email
-    # add entry in db 
-    # return ()
+
+"""
+    return HttpResponse(response)

@@ -1,0 +1,18 @@
+{
+  "name": "getpicolink",
+  "version": "1.0.0",
+  "description": "A Zappy URL Shortner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wtrbtl03/getPico.Link.git"
+  },
+  "author": "wtrbtl03",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/wtrbtl03/getPico.Link/issues"
+  },
+  "homepage": "https://github.com/wtrbtl03/getPico.Link#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.6"
+  }
+}

@@ -33,8 +33,8 @@ urlpatterns = [
     path('update/<str:custom_phrase>/', views.update_url),
     re_path(r'^(?P<url_hash>[A-Za-z0-9_-]+)/$', include('api.urls')),   #[+]/[*{0}]
     path('get/', include('api.urls')),  #get/[+]
+    path('auth/', include('user.urls')),
     path('accounts/', include('allauth.urls')),
-    path('auth/', include('users.urls')),
     path('accounts/login/', RedirectView.as_view(url='/accounts/google/login/')),
     path('accounts/signup/', RedirectView.as_view(url='/accounts/google/login/')),
 ]
