@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>getPico.Link : A Zappy URL Shortener</title>
+    {% load static %}
+    {% load socialaccount %}
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'tailwind/output.css' %}">
+    <script src="{% static 'script.js' %}"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .noise {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.05;
+        }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center bg-gray-900 text-gray-300 overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-slate-950 to-slate-900"></div>
+        <div class="absolute -inset-[10px] bg-[#020617]">
+            <div id="glow-1" class="absolute inset-x-0 top-0 h-[800px] bg-gradient-to-b from-indigo-500/40 blur-[100px] opacity-20 animate-pulse-slow"></div>
+            <div id="glow-2" class="absolute inset-x-0 top-40 h-[800px] rotate-[10deg] bg-gradient-to-b from-indigo-400/30 blur-[100px] opacity-20 animate-pulse-slow"></div>
+            <div id="glow-3" class="absolute inset-x-80 top-[200px] h-[800px] rotate-[40deg] bg-gradient-to-b from-sky-500/30 blur-[100px] opacity-20 animate-pulse-slow"></div>
+        </div>
+        <div class="absolute inset-0 noise"></div>
+    </div>
+
+    <header class="flex justify-end p-4">
+        <div>
+            {% if user.is_authenticated %}
+                <p class="inline-block">Welcome, {{ user.username }}!</p>
+                <form method="POST" action="{% url 'account_logout' %}" class="inline-block">
+                    {% csrf_token %}
+                    <button type="submit" class="ml-4 p-0 bg-blue-500 text-white rounded">
+                        <!-- <img src="{% static 'icons/user-icon.svg' %}" alt="Copy" title="Copy" class="p-0 m-0 inline-block"> -->
+                        <p class="py-2 px-4 inline-block">Sign Out</p>
+                    </button>
+                </form>
+            {% else %}
+                <form method="POST" action="{% provider_login_url 'google' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="ml-4 p-0 bg-blue-500 text-white rounded">
+                        <img src="{% static 'icons/google-icon.svg' %}" alt="Copy" title="Copy" class="p-0 m-0 inline-block">
+                        <p class="pr-1 inline-block">Sign In</p>
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="flex flex-col items-center justify-center min-h-screen">
+        <h1 class="text-5xl font-bold text-center mb-4">getPico.Link</h1>
+        <section class="w-full max-w-3xl p-4">
+            {% csrf_token %}
+            <input type="text" name="input_url" id="longURLTextField" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-700 focus:border-blue-500 focus:outline-none" placeholder="Enter your long URL">
+            <div class="relative group mt-4 flex items-center">
+                <span class="text-gray-300 mr-2">getPico.Link/</span>
+
+                <input type="text" name="custom-phrase" id="customPhraseTextField" class="custom-phrase bg-transparent text-white border-none focus:border-blue-500 focus:outline-none flex-grow" placeholder="Enter custom phrase" {% if not user.is_authenticated %}disabled{% endif %}>
+                {% if not user.is_authenticated %}
+                    <span class="absolute left-0 bottom-full mb-2 w-48 text-center text-xs text-white bg-black rounded py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">Sign in to create custom URLs</span>
+                {% endif %}
+            </div>
+            <button type="submit" id="shorten_btn" class="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded">getPicoLink!</button>
+            <div id="error_message" class="text-red-500 mt-4"></div>
+        </section>
+        <section id="user-urls" class="w-full max-w-3xl mt-8">
+            {% if user.is_authenticated %}
+                <h2 class="text-xl font-bold">My Pico Links</h2>
+                <ul id="urls-list" class="mt-4 space-y-2"></ul>
+            {% endif %}
+        </section>
+    </main>
+
+    <div id="modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-2xl w-full h-64 relative">
+            <button id="close_btn" class="svg-button absolute top-4 right-4">
+                <img src="{% static 'icons/cross-icon.svg' %}" alt="Close" title="Close" class="h-6 w-6">
+            </button>
+            <div class="flex flex-col items-center justify-center h-full">
+                <p class="text-blue-400 mb-2 truncate text-center">
+                    <a id="long_url_display" class="underline"></a>
+                </p>
+                <p class="text-white mb-2 text-center">has been PicoLinked to</p>
+                <div id="short_url_display_container" class="flex items-center justify-center bg-gray-700 p-1 rounded-lg relative">
+                    <a id="short_url_display" class="font-bold text-white px-1 py-2 flex justify-center items-center"></a>
+                    <button id="copy_btn" class="px-1 py-2 rounded">
+                        <img src="{% static 'icons/copy-icon.svg' %}" alt="Copy" title="Copy" class="p-0 mr-0">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+    </script>
+    <script>
+        function updateGlows() {
+            const glows = [
+                document.getElementById('glow-1'),
+                document.getElementById('glow-2'),
+                document.getElementById('glow-3')
+            ];
+
+            const colors = [
+                'from-indigo-500/40',
+                'from-indigo-400/30',
+                'from-sky-500/30',
+                'from-purple-500/30',
+                'from-pink-500/30'
+            ];
+
+            setInterval(() => {
+                glows.forEach((glow, index) => {
+                    const currentColor = colors[Math.floor(Math.random() * colors.length)];
+                    glow.classList.remove(...colors);
+                    glow.classList.add(currentColor);
+                });
+            }, 8000);
+        }
+
+        updateGlows();
+    </script>
+</body>
+</html>
